@@ -1,54 +1,50 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const passport = require('passport');
-const session = require('express-session');
-const RedisStore = require('connect-redis').default;
-const { createClient } = require('redis');
+import express from 'express';
+import cors from 'cors';
+import session from 'express-session';
+import connectRedis from 'connect-redis'; // <-- Change this import
+import passport from 'passport';
+import connectDB from './config/db.js';
+import authRoutes from './routes/auth.js';
+import redisClient from './config/redis.js';
+import './config/passport.js'; // ✅ <-- this is crucial
+import dotenv from 'dotenv';
 
-require('./config/passport');
+dotenv.config();
 
 const app = express();
-const authRoutes = require('./routes/auth');
 
-// ✅ Redis client setup
-const redisClient = createClient({
-  url: `redis://${process.env.REDIS_HOST}:6379`,
-  legacyMode: true,
-});
-redisClient.connect().catch(console.error);
+// Initialize RedisStore with express-session
+const RedisStore = connectRedis(session); // <-- Fix here
 
-// ✅ Redis session store
-const store = new RedisStore({
-  client: redisClient,
-  prefix: 'sess:',
-});
-
-// ✅ Middlewares
-app.use(cors());
-app.use(express.json());
-
-app.use(session({
-  store,
-  secret: process.env.JWT_SECRET,
+// Configure session middleware
+const sessionMiddleware = session({
+  store: new RedisStore({ client: redisClient }), // Now works!
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-}));
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 3600000 // 1 hour
+  }
+});
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ✅ Routes
-app.use('/auth', authRoutes);
+// Initialize connections
+(async () => {
+  await connectDB();
+  await redisClient.connect();
+})();
 
-// ✅ MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected');
-    const PORT = process.env.PORT || 4000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Auth Service running on port ${PORT}`);
-    });
-  })
-  .catch(err => console.error('❌ MongoDB connection failed:', err));
+// Routes
+app.use('/api/auth', authRoutes);
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Auth service running on port ${PORT}`);
+});

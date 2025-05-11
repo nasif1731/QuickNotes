@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import NoteForm from '../components/NoteForm';
+import PublicNotesList from '../components/PublicNotesList';
 
 const Dashboard = () => {
   const [token, setToken] = useState(null);
@@ -15,16 +17,25 @@ const Dashboard = () => {
     }
   }, [navigate]);
 
+  // Optional loading screen while checking token
+  if (!token) return null;
+
   return (
     <>
       <Navbar />
 
-      <div className="container py-4">
+      <div className="container-fluid py-4">
         <div className="alert alert-success">
-          Welcome to your dashboard! 🎉
+          ✅ Welcome to your dashboard! You are logged in.
         </div>
 
-        <p className="text-muted">This will show your notes and tools soon.</p>
+        <div className="mb-4">
+          <NoteForm />
+        </div>
+
+        <div>
+          <PublicNotesList />
+        </div>
       </div>
     </>
   );

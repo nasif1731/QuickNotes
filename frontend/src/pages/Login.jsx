@@ -2,7 +2,7 @@ import Navbar from '../components/Navbar';
 
 const Login = () => {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:4000/api/auth/google';
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/api/auth/google`;
   };
 
   return (
@@ -14,7 +14,10 @@ const Login = () => {
           <div className="card-body text-center p-4">
             <h2 className="mb-3">📝 Welcome to QuickNotes</h2>
             <p className="text-muted mb-4">Sign in to start creating and managing your notes.</p>
-            <button className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2" onClick={handleGoogleLogin}>
+            <button
+              className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2"
+              onClick={handleGoogleLogin}
+            >
               <img
                 src="https://www.svgrepo.com/show/475656/google-color.svg"
                 alt="Google logo"

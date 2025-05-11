@@ -30,7 +30,7 @@ router.get(
       );
 
       // Redirect to frontend with token
-      res.redirect//(http://localhost:5173/auth-success?token=${token});
+      res.redirect(`http://localhost:5173/auth-success?token=${token}`);
       
     } catch (error) {
       console.error('❌ Callback error:', error);

@@ -10,6 +10,7 @@ services:
       - notes-db
     env_file:
       - ./notes-service/.env
+    restart: unless-stopped
 
   notes-db:
     image: postgres:15
@@ -19,11 +20,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: notesdb
-    volumes:
-      - notes_pgdata:/var/lib/postgresql/data
-      - ./notes-service/app/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     ports:
       - "5432:5432"
+    volumes:
+      - notes_pgdata:/var/lib/postgresql/data
+      - ./notes-service/app/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
 
   public-service:
     build: ./public-service
@@ -33,6 +34,7 @@ services:
     depends_on:
       - mongo
       - redis
+    restart: unless-stopped
 
   mongo:
     image: mongo:6
@@ -41,12 +43,14 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    restart: unless-stopped
 
   redis:
     image: redis:7
     container_name: redis
     ports:
       - "6379:6379"
+    restart: unless-stopped
 
 volumes:
   notes_pgdata:

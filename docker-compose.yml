@@ -1,6 +1,15 @@
-version: '3.8'
-
 services:
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./auth-service/.env
+    depends_on:
+      - mongo
+      - redis
+
   notes-service:
     build: ./notes-service
     container_name: notes-service

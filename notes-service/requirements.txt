@@ -1,5 +1,13 @@
+<<<<<<< HEAD
 fastapi
 uvicorn
 psycopg2-binary
 python-dotenv
 pydantic
+=======
+fastapi
+uvicorn
+psycopg2-binary
+python-dotenv
+pydantic
+>>>>>>> 62329d563505fe1ee0f244cc0838f68872f6d93c

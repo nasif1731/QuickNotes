@@ -12,39 +12,33 @@ router.get(
 // Google Callback (with session cleanup)
 router.get(
   '/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { 
+    failureRedirect: '/login',
+    session: false  // Disable sessions for JWT flow
+  }),
   async (req, res) => {
     try {
-      console.log('✅ Google callback hit');
-      console.log('User:', req.user); // <-- Log this
-
       if (!req.user) {
-        return res.status(401).send('User not found after Google auth');
+        return res.redirect('/login?error=no_user');
       }
 
+      // Generate JWT
       const token = jwt.sign(
         { id: req.user._id, role: req.user.role },
-        process.env.JWT_SECRET
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
       );
 
-      req.logout((err) => {
-        if (err) console.error('Logout error:', err);
-        req.session.destroy(() => {
-          console.log('✅ Session destroyed');
-          res.send(`
-            <h2>✅ Login Successful</h2>
-            <p>Your JWT:</p>
-            <pre>${token}</pre>
-            <p>Use this token in Postman or your frontend.</p>
-          `);
-        });
-      });
-    } catch (err) {
-      console.error('❌ Callback error:', err);
-      res.status(500).send('OAuth callback failed');
+      // Redirect to frontend with token
+      res.redirect//(http://localhost:5173/auth-success?token=${token});
+      
+    } catch (error) {
+      console.error('❌ Callback error:', error);
+      res.redirect('/login?error=server_error');
     }
   }
 );
+
 
 
 

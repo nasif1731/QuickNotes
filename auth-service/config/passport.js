@@ -22,16 +22,17 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/api/auth/google/callback',
-      passReqToCallback: true
+      callbackURL: process.env.GOOGLE_CALLBACK_URL, // Use env variable
+      scope: ['profile', 'email']  // Move scope here
     },
-    async (req, accessToken, refreshToken, profile, done) => {
+    async (accessToken, refreshToken, profile, done) => {
       try {
         const user = await User.findOneAndUpdate(
           { googleId: profile.id },
           {
             name: profile.displayName,
-            email: profile.emails[0].value
+            email: profile.emails[0].value,
+            role: 'user'  // Ensure role is set
           },
           { upsert: true, new: true }
         );

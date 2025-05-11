@@ -4,54 +4,52 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	
 	"time"
 
-	"github.com/go-redis/redis/v8"
-	"go.mongodb.org/mongo-driver/bson"
+	"github.com/gorilla/mux"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var ctx = context.Background()
-var mongoClient *mongo.Client
-var redisClient *redis.Client
 
 type Note struct {
-	ID      string `json:"id" bson:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	ID       string   `json:"id" bson:"id"`
+	Title    string   `json:"title"`
+	Content  string   `json:"content"`
+	Tags     []string `json:"tags"`
+	Category string   `json:"category"`
+	IsPublic bool     `json:"is_public"`
 }
 
-func Init(mongo *mongo.Client, redis *redis.Client) {
-	mongoClient = mongo
-	redisClient = redis
+type Handler struct {
+	Mongo  *mongo.Collection
+	Redis  *redis.Client
 }
 
-func GetPublicNoteHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	if id == "" {
-		http.Error(w, "Missing ID", http.StatusBadRequest)
-		return
-	}
+func (h *Handler) GetPublicNote(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	cacheKey := "public_note:" + id
 
-	// Check Redis cache
-	cached, err := redisClient.Get(ctx, id).Result()
-	if err == nil {
+	// Try Redis cache
+	if cached, err := h.Redis.Get(ctx, cacheKey).Result(); err == nil {
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(cached))
 		return
 	}
 
-	// Fetch from MongoDB
+	// MongoDB fallback
 	var note Note
-	collection := mongoClient.Database("publicdb").Collection("notes")
-	err = collection.FindOne(ctx, bson.M{"id": id, "is_public": true}).Decode(&note)
+	err := h.Mongo.FindOne(ctx, bson.M{"id": id, "is_public": true}).Decode(&note)
 	if err != nil {
 		http.Error(w, "Note not found", http.StatusNotFound)
 		return
 	}
 
-	// Cache in Redis
 	data, _ := json.Marshal(note)
-	redisClient.Set(ctx, id, string(data), 10*time.Minute)
+	h.Redis.Set(ctx, cacheKey, data, 10*time.Minute)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)

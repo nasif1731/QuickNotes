@@ -2,41 +2,47 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/http"
+	"os"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/mux"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"public-service/handlers"
 )
 
-var (
-	MongoClient *mongo.Client
-	RedisClient *redis.Client
-	Ctx         = context.Background()
-)
-
 func main() {
-	var err error
+	ctx := context.Background()
 
-	// MongoDB connection
-	MongoClient, err = mongo.Connect(Ctx, options.Client().ApplyURI("mongodb://mongo:27017"))
+	// MongoDB
+	mongoURI := os.Getenv("MONGO_URI")
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
-		panic(err)
+		log.Fatal("❌ MongoDB connection error:", err)
+	}
+	notesCol := client.Database("notesdb").Collection("notes")
+
+	// Redis
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_URL"),
+	})
+	if _, err := redisClient.Ping(ctx).Result(); err != nil {
+		log.Fatal("❌ Redis connection error:", err)
 	}
 
-	// Redis connection
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr: "redis:6379",
-	})
+	// Handler wiring
+	h := &handlers.Handler{
+		Mongo: notesCol,
+		Redis: redisClient,
+	}
 
-	// Inject clients into handler
-	handlers.Init(MongoClient, RedisClient)
+	// Router
+	r := mux.NewRouter()
+	r.HandleFunc("/public/{id}", h.GetPublicNote).Methods("GET")
 
-	http.HandleFunc("/public", handlers.GetPublicNoteHandler)
-
-	fmt.Println("Public service listening on :8080")
-	http.ListenAndServe(":8080", nil)
+	log.Println("✅ Public service running on port 8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
 }

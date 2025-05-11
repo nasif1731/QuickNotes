@@ -10,8 +10,14 @@ const PublicNotesList = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
 
   const fetchNotes = async () => {
-    const res = await getPublicNotes();
-    setNotes(res.data || []);
+    try {
+      const res = await getPublicNotes();
+      const result = Array.isArray(res.data) ? res.data : [];
+      setNotes(result);
+    } catch (err) {
+      console.error("❌ Failed to fetch notes", err);
+      setNotes([]);
+    }
   };
 
   useEffect(() => {

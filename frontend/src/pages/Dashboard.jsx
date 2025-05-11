@@ -5,37 +5,37 @@ import NoteForm from '../components/NoteForm';
 import PublicNotesList from '../components/PublicNotesList';
 
 const Dashboard = () => {
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(undefined); // undefined = loading, null = not found
   const navigate = useNavigate();
 
   useEffect(() => {
     const savedToken = localStorage.getItem('quicknotes_token');
     if (!savedToken) {
-      navigate('/login?error=unauthorized');
+      setToken(null);
     } else {
       setToken(savedToken);
     }
-  }, [navigate]);
+  }, []);
 
-  // Optional loading screen while checking token
-  if (!token) return null;
+  useEffect(() => {
+    if (token === null) {
+      navigate('/login?error=unauthorized');
+    }
+  }, [token, navigate]);
+
+  if (token === undefined) {
+    return <div className="text-center mt-5">🔄 Checking authentication...</div>;
+  }
 
   return (
     <>
       <Navbar />
-
       <div className="container-fluid py-4">
         <div className="alert alert-success">
-          ✅ Welcome to your dashboard! You are logged in.
+          ✅ Welcome to your dashboard!
         </div>
-
-        <div className="mb-4">
-          <NoteForm />
-        </div>
-
-        <div>
-          <PublicNotesList />
-        </div>
+        <NoteForm />
+        <PublicNotesList />
       </div>
     </>
   );

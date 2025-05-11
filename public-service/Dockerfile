@@ -1,11 +1,13 @@
-FROM golang:1.21
+FROM golang:1.20-alpine
 
 WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
 
-RUN go mod init public-service && \
-    go get github.com/go-redis/redis/v8 \
-           go.mongodb.org/mongo-driver/mongo && \
-    go build -o public-service
+RUN go build -o public-service .
 
+EXPOSE 8080
 CMD ["./public-service"]

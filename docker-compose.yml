@@ -21,15 +21,17 @@ services:
       - ./notes-service/.env
     restart: unless-stopped
 
-  # public-service:
-  #   build: ./public-service
-  #   container_name: public-service
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - mongo
-  #     - redis
-  #   restart: unless-stopped
+  public-service:
+    build: ./public-service
+    container_name: public-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+      - redis
+    env_file:
+      - ./public-service/.env
+    restart: unless-stopped
 
   api-gateway:
     build: ./api-gateway
@@ -41,7 +43,7 @@ services:
     depends_on:
       - auth-service
       - notes-service
-      # - public-service
+      - public-service
 
   notes-db:
     image: postgres:15

@@ -15,3 +15,8 @@ app.add_middleware(
 
 # Include your routes
 app.include_router(router)
+
+# Add this route to handle root requests
+@app.get("/")
+def root():
+    return {"message": "✅ Notes service is running"}

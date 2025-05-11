@@ -10,12 +10,20 @@ import './App.css';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
+  const [token, setToken] = useState(() => localStorage.getItem('quicknotes_token'));
 
   useEffect(() => {
     document.body.classList.toggle('dark-mode', darkMode);
   }, [darkMode]);
 
-  const token = localStorage.getItem('quicknotes_token');
+  useEffect(() => {
+    const handleStorage = () => {
+      setToken(localStorage.getItem('quicknotes_token'));
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   return (
     <BrowserRouter>

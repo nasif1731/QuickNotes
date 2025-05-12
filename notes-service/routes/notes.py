@@ -5,6 +5,12 @@ import psycopg2
 import os
 import time
 
+# MongoDB setup
+from pymongo import MongoClient
+mongo_client = MongoClient("mongodb://mongo:27017")  # Use container name
+mongo_db = mongo_client["notesdb"]
+mongo_collection = mongo_db["notes"]
+
 router = APIRouter()
 
 # Retry DB connection until ready (max 10 attempts)
@@ -26,7 +32,6 @@ for attempt in range(10):
 else:
     raise Exception("❌ Could not connect to the database after 10 attempts.")
 
-
 # ----------------------------- Routes -----------------------------
 
 @router.post("/notes")
@@ -37,6 +42,22 @@ def create_note(note: Note):
         (note_id, note.title, note.content, note.is_public, note.tags, note.category)
     )
     conn.commit()
+
+    # If public, sync to MongoDB
+    if note.is_public:
+        mongo_collection.update_one(
+            {"id": note_id},
+            {"$set": {
+                "id": note_id,
+                "title": note.title,
+                "content": note.content,
+                "tags": note.tags,
+                "category": note.category,
+                "is_public": True
+            }},
+            upsert=True
+        )
+
     return {"id": note_id}
 
 
@@ -64,6 +85,23 @@ def update_note(note_id: str, updated_note: Note = Body(...)):
         (updated_note.title, updated_note.content, updated_note.is_public, updated_note.tags, updated_note.category, note_id)
     )
     conn.commit()
+
+    # Sync logic
+    if updated_note.is_public:
+        mongo_collection.update_one(
+            {"id": note_id},
+            {"$set": {
+                "title": updated_note.title,
+                "content": updated_note.content,
+                "tags": updated_note.tags,
+                "category": updated_note.category,
+                "is_public": True
+            }},
+            upsert=True
+        )
+    else:
+        mongo_collection.delete_one({"id": note_id})
+
     return {"message": "Note updated successfully"}
 
 
@@ -71,4 +109,8 @@ def update_note(note_id: str, updated_note: Note = Body(...)):
 def delete_note(note_id: str):
     cur.execute("DELETE FROM notes WHERE id = %s", (note_id,))
     conn.commit()
+
+    # Remove from MongoDB if exists
+    mongo_collection.delete_one({"id": note_id})
+
     return {"message": "Note deleted successfully"}

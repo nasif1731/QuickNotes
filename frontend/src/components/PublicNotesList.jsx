@@ -1,33 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { getPublicNotes, deleteNote, updateNote } from '../api/notes';
+import React, { useState } from 'react';
+import { deleteNote, updateNote } from '../api/notes';
+import { Link } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 
-const PublicNotesList = () => {
-  const [notes, setNotes] = useState([]);
+const PublicNotesList = ({ notes, onNotesUpdate }) => {
   const [editingNoteId, setEditingNoteId] = useState(null);
-  const [editForm, setEditForm] = useState({ title: '', content: '', is_public: true, tags: '', category: 'Low' });
+  const [editForm, setEditForm] = useState({
+    title: '',
+    content: '',
+    is_public: true,
+    tags: '',
+    category: 'Low'
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-
-  const fetchNotes = async () => {
-    try {
-      const res = await getPublicNotes();
-      const result = Array.isArray(res.data) ? res.data : [];
-      setNotes(result);
-    } catch (err) {
-      console.error("❌ Failed to fetch notes", err);
-      setNotes([]);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotes();
-  }, []);
-
-  const handleDelete = async (id) => {
-    await deleteNote(id);
-    fetchNotes();
-  };
 
   const startEdit = (note) => {
     setEditingNoteId(note.id);
@@ -41,12 +27,26 @@ const PublicNotesList = () => {
   };
 
   const handleUpdate = async () => {
-    await updateNote(editingNoteId, {
-      ...editForm,
-      tags: editForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '')
-    });
-    setEditingNoteId(null);
-    fetchNotes();
+    try {
+      await updateNote(editingNoteId, {
+        ...editForm,
+        is_public: true,
+        tags: editForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '')
+      });
+      setEditingNoteId(null);
+      onNotesUpdate(); // Trigger refresh
+    } catch (err) {
+      console.error("Failed to update note:", err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteNote(id);
+      onNotesUpdate(); // Trigger refresh
+    } catch (err) {
+      console.error("Failed to delete note:", err);
+    }
   };
 
   const exportToPDF = (note) => {
@@ -66,102 +66,138 @@ const PublicNotesList = () => {
 
   const filteredNotes = notes.filter(note =>
     (note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.id.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    note.id.toLowerCase().includes(searchTerm.toLowerCase())) &&
     (categoryFilter ? note.category === categoryFilter : true)
   );
 
   return (
-    <div className="card p-4 shadow-sm mt-4">
-      <h4 className="mb-3">📢 Public Notes</h4>
-
-      <input
-        className="form-control mb-2"
-        placeholder="Search by title or note ID..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-
-      <select
-        className="form-select mb-3"
-        value={categoryFilter}
-        onChange={(e) => setCategoryFilter(e.target.value)}
-      >
-        <option value="">All Categories</option>
-        <option value="Low">Low</option>
-        <option value="Medium">Medium</option>
-        <option value="High">High</option>
-      </select>
+    <div className="glass-container p-4 rounded-4 shadow-sm mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 responsive-stack">
+        <h4 className="m-0">Public Notes</h4>
+        <div className="d-flex gap-2 flex-grow-1 ms-3" style={{ maxWidth: '600px' }}>
+          <input
+            className="modern-search form-control"
+            placeholder="Search notes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <select
+            className="modern-select form-select"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+      </div>
 
       {filteredNotes.length === 0 ? (
-        <p className="text-muted">No matching notes found.</p>
+        <div className="text-center py-5">
+          <p className="text-muted">No notes found matching your criteria</p>
+        </div>
       ) : (
-        <ul className="list-group">
+        <div className="row g-4">
           {filteredNotes.map((note) => (
-            <li key={note.id} className="list-group-item">
-              {editingNoteId === note.id ? (
-                <div>
-                  <input
-                    className="form-control mb-2"
-                    value={editForm.title}
-                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  />
-                  <textarea
-                    className="form-control mb-2"
-                    value={editForm.content}
-                    onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                  />
-                  <input
-                    className="form-control mb-2"
-                    placeholder="Tags (comma-separated)"
-                    value={editForm.tags}
-                    onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
-                  />
-                  <select
-                    className="form-select mb-2"
-                    value={editForm.category}
-                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                  <div className="form-check mb-2">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={editForm.is_public}
-                      onChange={(e) => setEditForm({ ...editForm, is_public: e.target.checked })}
-                      id={`public-${note.id}`}
-                    />
-                    <label className="form-check-label" htmlFor={`public-${note.id}`}>Public</label>
-                  </div>
-                  <button className="btn btn-success btn-sm me-2" onClick={handleUpdate}>Save</button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setEditingNoteId(null)}>Cancel</button>
+            <div key={note.id} className="col-12 col-md-6 col-lg-4">
+              <div className="note-card card h-100 border-0 shadow-sm hover-shadow">
+                <div className="card-body">
+                  {editingNoteId === note.id ? (
+                    <div>
+                      <input
+                        className="form-control mb-2"
+                        value={editForm.title}
+                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      />
+                      <textarea
+                        className="form-control mb-2"
+                        value={editForm.content}
+                        onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                      />
+                      <input
+                        className="form-control mb-2"
+                        placeholder="Tags (comma-separated)"
+                        value={editForm.tags}
+                        onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                      />
+                      <select
+                        className="form-select mb-2"
+                        value={editForm.category}
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                      
+                      <button className="btn btn-success btn-sm me-2" onClick={handleUpdate}>Save</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setEditingNoteId(null)}>Cancel</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <h5 className="card-title mb-0">
+                          <Link to={`/public-note/${note.id}`} className="text-decoration-none">
+                            {note.title}
+                          </Link>
+                        </h5>
+                        <span className={`badge rounded-pill ${
+                          note.category === 'High' ? 'bg-danger' : 
+                          note.category === 'Medium' ? 'bg-warning' : 'bg-success'
+                        }`}>
+                          {note.category}
+                        </span>
+                      </div>
+                      
+                      <p className="card-text text-muted mb-3">{note.content.slice(0, 100)}...</p>
+                      
+                      <div className="tag-cloud mb-3">
+                        {(note.tags || []).map((tag, i) => (
+                          <span key={i} className="badge bg-secondary me-1 rounded-pill">{tag}</span>
+                        ))}
+                      </div>
+
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div className="btn-group">
+                          <button 
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => startEdit(note)}
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleDelete(note.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                        <div className="export-buttons">
+                          <button 
+                            className="btn btn-sm btn-link text-decoration-none"
+                            onClick={() => exportToPDF(note)}
+                            title="Export to PDF"
+                          >
+                            📄
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-link text-decoration-none"
+                            onClick={() => exportToMarkdown(note)}
+                            title="Export to Markdown"
+                          >
+                            📝
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-              ) : (
-                <div>
-                  <h5>{note.title}</h5>
-                  <p>{note.content}</p>
-                  <div className="mb-2">
-                    <span className={`badge me-2 ${note.category === 'High' ? 'bg-danger' : note.category === 'Medium' ? 'bg-warning text-dark' : 'bg-success'}`}>
-                      {note.category}
-                    </span>
-                    {(note.tags || []).map((tag, i) => (
-                      <span key={i} className="badge bg-secondary me-1">{tag}</span>
-                    ))}
-                  </div>
-                  <small className="text-muted">ID: {note.id}</small><br />
-                  <div className="mt-2">
-                    <button className="btn btn-sm btn-warning me-2" onClick={() => startEdit(note)}>Edit</button>
-                    <button className="btn btn-sm btn-danger me-2" onClick={() => handleDelete(note.id)}>Delete</button>
-                    <button className="btn btn-sm btn-info me-2" onClick={() => exportToPDF(note)}>📄 Export PDF</button>
-                    <button className="btn btn-sm btn-outline-info" onClick={() => exportToMarkdown(note)}>📝 Export MD</button>
-                  </div>
-                </div>
-              )}
-            </li>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

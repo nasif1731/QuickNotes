@@ -7,14 +7,14 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_OWNER: nasif1731  # your Docker Hub username
+  IMAGE_OWNER: nasif1731  # Your Docker Hub username
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [auth-service, notes-service, public-service, api-gateway, frontend]
+        service: [auth-service, notes-service, public-service, api-gateway]  # frontend removed
 
     steps:
       - name: Checkout code
@@ -29,7 +29,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v5
         with:
           context: ./${{ matrix.service }}

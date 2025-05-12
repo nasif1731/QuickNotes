@@ -1,73 +1,116 @@
-/* Ensure full height layout works for vh-100 and flex centering */
+/* index.css */
+/* Full viewport setup */
 html, body, #root {
   height: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
-  min-width: 320px;
-  min-height: 100vh;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
-/* Default (Light mode) */
+/* Light/Dark mode base */
 body {
   background-color: #ffffff;
   color: #213547;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode styles */
 body.dark-mode {
-  background-color: #242424;
-  color: rgba(255, 255, 255, 0.87);
+  background-color: #121212;
+  color: #f1f1f1;
 }
 
-/* Global typography and smoothing */
-body {
-  line-height: 1.5;
-  font-weight: 400;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Headings */
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-/* Links */
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-/* Buttons */
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #f9f9f9;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-/* Full width containers */
-.container,
-.container-fluid {
+/* Full-width containers */
+.container, .container-fluid {
   max-width: 100% !important;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Main content area */
+.main-content {
+  padding: 2rem 5%;
+  min-height: calc(100vh - 56px); /* Adjust navbar height */
+}
+
+/* Glass effect container */
+.glass-container {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 1rem 0;
+}
+
+.dark-mode .glass-container {
+  background: rgba(30, 30, 30, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Form elements */
+.modern-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.modern-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Dark mode form overrides */
+.dark-mode .modern-input,
+.dark-mode .form-control {
+  background-color: #1e1e1e;
+  color: #f1f1f1;
+  border-color: #333;
+}
+
+/* Card styling */
+.note-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.note-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Button styling */
+.btn-hover-effect {
+  transition: transform 0.2s ease;
+}
+
+.btn-hover-effect:hover {
+  transform: translateY(-2px);
+}
+.body > div {
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+  .responsive-stack {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+}
+
+/* Remove default Bootstrap constraints */
+@media (min-width: 1400px) {
+  .container, .container-lg, .container-md, .container-sm, .container-xl, .container-xxl {
+    max-width: 100% !important;
+  }
 }

@@ -10,3 +10,5 @@ export const createNote = (note) => API.post('/notes', note);  // ✅ NO trailin
 export const getPublicNotes = () => API.get('/notes');
 export const deleteNote = (id) => API.delete(`/notes/${id}`);
 export const updateNote = (id, updatedNote) => API.put(`/notes/${id}`, updatedNote);
+// ✅ New: Fetch from Go Public Service
+export const getPublicNoteById = (id) => API.get(`/public/${id}`);

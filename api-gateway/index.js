@@ -13,13 +13,13 @@ app.use('/auth', createProxyMiddleware({
 app.use('/notes', createProxyMiddleware({
   target: process.env.NOTES_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/notes': '' }
+  pathRewrite: { '^/notes': '/notes' }  // ✅ preserve /notes
 }));
 
 app.use('/public', createProxyMiddleware({
   target: process.env.PUBLIC_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/public': '' }
+  pathRewrite: { '^/public': '/public' } // ✅ preserve route
 }));
 
 app.listen(3000, () => {
